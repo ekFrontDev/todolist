@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable indent */
 // global import
 import React from 'react'
@@ -17,6 +18,8 @@ const head = createRoot(headElement)
 export default class App extends React.Component {
   constructor() {
     super()
+
+	 this.interval = null
 
     // функция для удаления такси из тасклиста
     this.deletTask = (id) => {
@@ -95,15 +98,121 @@ export default class App extends React.Component {
         return { todoData: newArr }
       })
     }
+
+	 // функция записывает в стейт значения таймера после добавления таски в список
+    this.taskTimerState = (min, sec, id) => {
+      this.setState(({ todoData }) => {
+        const end = Date.now() + min * 1000 * 60 + sec * 1000
+        const now = Date.now()
+        const delta = end - now
+		  const idx = todoData.findIndex((el) => el.id === id)
+        const oldTask = todoData[idx]
+        const newTask = {...oldTask,
+			 minuteTens: Math.floor(delta / 1000 / 60 / 10),
+          minute: Math.floor((delta / 1000 / 60) % 10),
+          secondTens: Math.floor((delta % 60000) / 10000),
+          second: Math.floor(((delta % 60000) / 1000) % 10)}
+		  const newArr = [ ...todoData.slice(0, idx), newTask, ...todoData.slice(idx + 1) ]
+		  return { todoData: newArr }
+      })
+    }
+	 // функция меняет значение timer на true при нажатии кнопки плэй
+	 this.timerStart = (id) => {
+		const { todoData } = this.state
+		const idx = todoData.findIndex((el) => el.id === id)
+		const oldTask = todoData[idx]
+			// eslint-disable-next-line no-shadow
+			this.setState(({ todoData }) => {
+				const newTask = { ...oldTask, timer: !oldTask.timer }
+				const newArr = [ ...todoData.slice(0, idx), newTask, ...todoData.slice(idx + 1) ]
+				return { todoData: newArr }
+			})
+	 }
+
+	 this.timerEnd = (id) => {
+		this.setState(({ todoData }) => {
+			const idx = todoData.findIndex((el) => el.id === id)
+			const oldTask = todoData[idx]
+			const newTask = { ...oldTask, 
+				minuteForTask: 0,
+				seconds: 0,
+				timer: false, 
+				minuteTens: 0,
+				minute: 0,
+				secondTens: 0,
+				second: 0}
+			const newArr = [ ...todoData.slice(0, idx), 
+				newTask, ...todoData.slice(idx + 1) ]
+			return { todoData: newArr }
+		})
+	 }
+
+	 this.changeTimerState = (arr) => {
+		const [ minTens, min, secTens, sec, id ] = arr
+		const totalMin = minTens * 10 + min
+      const totalSec = secTens * 10 + sec
+		this.setState(({ todoData }) => {
+			const idx = todoData.findIndex((el) => el.id === id)
+			const oldTask = todoData[idx]
+			const newTask = { ...oldTask, 
+				minuteForTask: totalMin,
+				seconds: totalSec,
+				minuteTens: minTens,
+				minute: min,
+				secondTens: secTens,
+				second: sec}
+			const newArr = [ ...todoData.slice(0, idx), 
+				newTask, ...todoData.slice(idx + 1) ]
+			return { todoData: newArr }
+		})
+	 }
   }
 
   // функция для создания объекта Task
   // eslint-disable-next-line class-methods-use-this
-  createNewObject(text) {
-    return { nameTask: text, id: Math.random() * 10, completed: false, date: new Date(), editing: false }
+  createNewObject(obj) {
+    const { label, min, sec } = obj
+    // eslint-disable-next-line object-curly-newline
+    return {
+      nameTask: label,
+      id: Math.floor(Math.random() * 1000),
+      completed: false,
+      date: new Date(),
+      editing: false,
+      minuteForTask: Number(min),
+      seconds: Number(sec),
+      minuteTens: '',
+      // eslint-disable-next-line no-dupe-keys
+      minute: '',
+      secondTens: '',
+      second: '',
+		timer: false
+      // eslint-disable-next-line prettier/prettier
+    // eslint-disable-next-line object-curly-newline
+    }
   }
 
-  state = { todoData: [], filter: 'all' }
+  // eslint-disable-next-line prettier/prettier
+  state = { todoData: [
+      // eslint-disable-next-line prettier/prettier
+      // {nameTask: 'Drink ',
+      //   id: Math.random() * 10,
+      //   completed: false,
+      //   date: new Date(),
+      //   editing: false,
+      //   minuteForTask: Number(7),
+      //   seconds: Number(60),
+      //   minuteTens: '',
+      //   minute: '',
+      //   secondTens: '',
+      //   second: '',
+		//   timer: false
+        // eslint-disable-next-line object-curly-newline
+      // },
+    ],
+
+    // eslint-disable-next-line prettier/prettier
+    filter: 'all',}
 
   render() {
     const { todoData, filter } = this.state
@@ -123,6 +232,10 @@ export default class App extends React.Component {
           onToggleCompleted={this.onToggleCompleted}
           onEditTask={this.editTask}
           onEdiTaskChange={this.editTaskChange}
+          onTaskTimerState={this.taskTimerState}
+			 onTimerStart={this.timerStart}
+			 onTimerEnd={this.timerEnd}
+			 onChangeTimerState={this.changeTimerState}
         />
         <Footer
           todoCount={todoCount}

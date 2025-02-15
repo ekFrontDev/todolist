@@ -1,9 +1,9 @@
 /* eslint-disable no-unused-vars */
 import React from 'react'
-import { formatDistance } from 'date-fns'
+import { formatDistance, format, formatISO9075 } from 'date-fns'
 import './task.css'
 
-export default class Task extends React.Component {
+class Task extends React.Component {
   constructor() {
     super()
 
@@ -20,13 +20,93 @@ export default class Task extends React.Component {
       onEditTaskChange(id, text)
       this.setState({ label: '' })
     }
+
+    this.taskTimerPlay = () => {
+      const { id, minuteTens, minute, secondTens, second, onTimerEnd, onChangeTimerState } = this.props
+      const totalSeconds = (minuteTens * 10 + minute) * 60 + (secondTens * 10 + second)
+      const end = Date.now() + totalSeconds * 1000
+      this.interval = setInterval(() => {
+        const now = Date.now()
+        const delta = end - now
+        if (delta <= 0) {
+          clearInterval(this.interval)
+          onTimerEnd(id)
+          return
+        }
+        // eslint-disable-next-line object-curly-newline
+        const minTens = Math.floor(delta / 1000 / 60 / 10)
+        const min = Math.floor((delta / 1000 / 60) % 10)
+        const secTens = Math.floor((delta % 60000) / 10000)
+        const sec = Math.floor(((delta % 60000) / 1000) % 10)
+
+        const newArr = [minTens, min, secTens, sec, id]
+        // eslint-disable-next-line object-curly-newline
+        onChangeTimerState(newArr)
+      }, 500)
+    }
+
+    this.timerStart = () => {
+      const { id, timer, onTimerStart } = this.props
+      if (timer) {
+        return
+      }
+      onTimerStart(id)
+      this.taskTimerPlay()
+    }
+
+    this.timerPause = () => {
+      const { id, onTimerStart } = this.props
+      clearInterval(this.interval)
+      onTimerStart(id)
+    }
   }
 
-  state = { label: '' }
+  componentDidMount() {
+    this.props.onTaskTimerState(this.props.minuteForTask, this.props.secondsForTask, this.props.id)
+  }
+
+  //   componentDidUpdate(prevProps) {
+  //     const { id, onTimerStart } = this.props
+  //     if (prevProps.timer !== this.props.timer) {
+  //       // this.props.onTaskTimerState(this.props.minuteForTask, this.props.secondsForTask, this.props.id)
+  //       onTimerStart(id)
+  //     }
+  //   }
+
+  componentWillUnmount() {
+    clearInterval(this.interval)
+  }
+
+  interval = null
+
+  state = { label: '', minTens: '', min: '', secTens: '', sec: '' }
 
   render() {
-    const { nameTask, onDeleted, onToggleCompleted, completed, date, editing, onEditTask, onEditTaskChange, id } =
-      this.props
+    // eslint-disable-next-line prettier/prettier
+    const {nameTask,
+      onDeleted,
+      onToggleCompleted,
+      completed,
+      date,
+      editing,
+      onEditTask,
+      onEditTaskChange,
+      onTaskTimerState,
+      onTimerStart,
+      onTimerEnd,
+      onChangeTimerState,
+      id,
+      minuteForTask,
+      secondsForTask,
+      minuteTens,
+      minute,
+      secondTens,
+      second,
+      timer,
+      // eslint-disable-next-line object-curly-newline
+    } = this.props
+
+    const { minTens, min, secTens, sec } = this.state
 
     let classNames = ''
 
@@ -48,6 +128,13 @@ export default class Task extends React.Component {
             <span className="description" onClick={onToggleCompleted}>
               {nameTask}
             </span>
+            <span className="description span-data">
+              <button className="icon icon-play" onClick={this.timerStart}></button>
+              <button className="icon icon-pause" onClick={this.timerPause}></button>
+              {minuteTens}
+              {minute}:{secondTens}
+              {second}
+            </span>
             <span className="created">created {time} ago</span>
           </label>
           <button className="icon icon-edit" onClick={onEditTask}></button>
@@ -60,3 +147,5 @@ export default class Task extends React.Component {
     )
   }
 }
+
+export default Task
