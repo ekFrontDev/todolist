@@ -5,7 +5,7 @@ import './task-list.css'
 // eslint-disable-next-line import/named
 import Task from '../task/task'
 
-const TaskList = ({
+export default function TaskList({
   todos,
   onDeleted,
   onToggleCompleted,
@@ -15,7 +15,7 @@ const TaskList = ({
   onTimerStart,
   onTimerEnd,
   onChangeTimerState,
-}) => {
+}) {
   const elements = todos.map((item) => {
     // eslint-disable-next-line prettier/prettier
     const {id,
@@ -60,4 +60,3 @@ const TaskList = ({
   })
   return <ul className="todo-list">{elements}</ul>
 }
-export default TaskList
